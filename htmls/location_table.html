@@ -1,0 +1,104 @@
+
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.10/css/jquery.dataTables.min.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+  <script src="http://maps.google.com/maps/api/js?sensor=false" 
+          type="text/javascript"></script>
+
+<body>
+	<table id="example" class="display" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>latitude</th>
+                <th>longitude</th>
+                <th>title</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>id</th>
+                <th>latitude</th>
+                <th>longitude</th>
+                <th>title</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <br /><br /><br />
+     <div id="map" style="width: 500px; height: 400px;"></div>
+<body>
+
+
+
+<script type="text/javascript">
+
+var globalData;
+function renderLocations(locationData, defaultIndex) {
+
+	if(!defaultIndex) {
+		defaultIndex = 0;
+	}
+	if(!locationData) {
+		locationData = globalData;
+	}
+
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 10,
+      center: new google.maps.LatLng(locationData[defaultIndex]['latitude'], locationData[defaultIndex]['longitude']),
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+
+    var infowindow = new google.maps.InfoWindow();
+
+    var marker, i;
+     console.log("Length is " + locationData.length);
+    for (i = 0; i < locationData.length; i++) {  
+      console.log(locationData[i]['latitude']  + " " + locationData[i]['longitude']);
+      marker = new google.maps.Marker({
+        position: new google.maps.LatLng(locationData[i]['latitude'], locationData[i]['longitude']),
+        map: map
+      });
+
+      google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        return function() {
+          infowindow.setContent(locationData[i]['title']);
+          infowindow.open(map, marker);
+        }
+      })(marker, i));
+    }
+  }
+
+function renderThisFunction(selectedIndex) {
+	renderLocations(globalData, selectedIndex);
+}
+
+function renderData(dataSet) {
+	$('#example').DataTable( {
+        //"ajax": 'http://localhost:8080/loginext/location'
+        "data" : dataSet
+    } );
+}
+$(document).ready(function() {
+	$.get("http://localhost:8080/loginext/location", function(data, status){
+		var requiredArr = [];
+		for(i=0; i<data.length; i++) {
+    		requiredArr[i] = [];
+    		requiredArr[i][0] = "<a href='javascript:renderThisFunction(" + (data[i]['id'] - 1) + ");'>" + data[i]['id'] + "</a>";
+    		requiredArr[i][1] = data[i]['latitude'];
+    		requiredArr[i][2] = data[i]['longitude'];
+    		requiredArr[i][3] = data[i]['title'];
+		}
+            console.log(requiredArr);
+
+            //data =  data;
+            locationData = data;
+            globalData = data;
+            renderLocations(data, 1);
+            renderData(requiredArr);
+        });
+	var dataSet = [[1, "10.2", "10.3", "Hayla"]];
+} );
+</script>
+</html>
