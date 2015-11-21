@@ -1,0 +1,56 @@
+FROM docker.pubmatic.com/tomcat7
+MAINTAINER Manoj Danane <manoj.danane@pubmatic.com>
+
+#RUN /usr/bin/yum install -y openssh-server
+#RUN sed "s/UsePAM yes//g; s/#UsePAM no/UsePAM no/g" -i /etc/ssh/sshd_config
+
+
+
+#Copy startup.sh
+ADD startup.sh /startup.sh
+RUN chmod +x /startup.sh
+
+ADD propertyReplace.sh /propertyReplace.sh
+RUN chmod +x /propertyReplace.sh
+
+# Get project details
+ ENV OKTA_CREDS=SmVua2luczpjb250aW51b3VzLWludGVncmF0aW9u
+ ENV GROUP_ID GROUP_ID_VAR
+# ENV GROUP_ID com/pubmatic/alchemy
+ ENV ARTIFACT_ID ARTIFACT_ID_VAR
+ ENV ARTIFACT_VERSION ARTIFACT_VERSION_VAR
+ ENV FINAL_ARTIFACT_NAME FINAL_ARTIFACT_NAME_VAR
+ ENV ARTIFACT_PACKAGING_TYPE ARTIFACT_PACKAGING_TYPE_VAR
+ ENV APP_RESOURCES_ARTIFACT APP_RESOURCES_ARTIFACT_VAR
+
+ ENV APP_RESOURCES_PASSED false
+ ENV ENVIORNMENT Nothing
+
+ #RUN GROUP_ID=${GROUP_ID//./\/}
+ RUN echo ${GROUP_ID}
+
+ENV ARTIFACT_URL http://repo.pubmatic.com/artifactory/libs-release-local/${GROUP_ID}/${ARTIFACT_ID}/${ARTIFACT_VERSION}/${ARTIFACT_ID}-${ARTIFACT_VERSION}.${ARTIFACT_PACKAGING_TYPE}
+
+RUN echo $ARTIFACT_URL
+
+ENV APP_RESOURCES_URL  http://repo.pubmatic.com/artifactory/libs-release-local/${GROUP_ID}/${APP_RESOURCES_ARTIFACT}/${ARTIFACT_VERSION}/${APP_RESOURCES_ARTIFACT}-${ARTIFACT_VERSION}-app-resources.tar.gz
+
+RUN echo $APP_RESOURCES_URL
+
+RUN cd $CATALINA_HOME/webapps && wget --header "Authorization: Basic ${OKTA_CREDS}" "${ARTIFACT_URL}" -O ${FINAL_ARTIFACT_NAME}.war
+
+RUN mkdir -p /tmp/docker_work/ && cd /tmp/docker_work/ && wget --header "Authorization: Basic ${OKTA_CREDS}" "${APP_RESOURCES_URL}" -O ${APP_RESOURCES_ARTIFACT}.tar.gz && mkdir -p ${APP_RESOURCES_ARTIFACT} &&  tar -zxf  ${APP_RESOURCES_ARTIFACT}.tar.gz -C ${APP_RESOURCES_ARTIFACT}
+
+#&& cp -rf ${APP_RESOURCES_ARTIFACT}/* $CATALINA_HOME/lib/ && pwd
+
+RUN ls $CATALINA_HOME/lib/
+
+#Mount the yml file so that it can be mapped to file provided during docker run
+RUN cat > /app-resources.yml
+#VOLUME /app-resources.yml
+
+# Run Startup script
+CMD ["/startup.sh"]
+
+#EXPOSE 22
+

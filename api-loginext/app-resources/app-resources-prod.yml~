@@ -1,0 +1,2 @@
+kickstart.security.loginPageUrl=http//10.100.222.36:80/
+jdbc.url=jdbc:mysql://10.100.222.33:3306/KickStart
